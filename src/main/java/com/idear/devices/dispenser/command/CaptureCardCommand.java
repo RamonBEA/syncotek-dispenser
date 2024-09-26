@@ -1,8 +1,8 @@
 package com.idear.devices.dispenser.command;
 
 import com.idear.devices.dispenser.DispenserException;
+import com.idear.devices.dispenser.DispenserStatus;
 import com.idear.devices.dispenser.comm.SerialPortHandler;
-import com.idear.devices.dispenser.command.AdvanceCheckStatusCommand.DispenserStatus;
 
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
@@ -16,6 +16,7 @@ public class CaptureCardCommand extends AdvanceCommand{
                               AdvanceCheckStatusCommand advanceCheckStatusCommand) {
         super(serialPortHandler);
         this.advanceCheckStatusCommand = advanceCheckStatusCommand;
+        commandName = "Capture Card";
     }
 
     /**
@@ -25,9 +26,14 @@ public class CaptureCardCommand extends AdvanceCommand{
     public void exec() throws DispenserException {
         wrapAndExecCommand(CAPTURE_CARD);
 
-        DispenserStatus dispenserStatus;
+        DispenserStatus dispenserStatus = new DispenserStatus();
+        dispenserStatus.setCapturingCard(false);
         do{
-            dispenserStatus = advanceCheckStatusCommand.exec();
+            try {
+                dispenserStatus = advanceCheckStatusCommand.exec();
+            } catch (ErrorParsingDispenserStatus ignored) {
+
+            }
         }while (!dispenserStatus.isCapturingCard());
     }
 }

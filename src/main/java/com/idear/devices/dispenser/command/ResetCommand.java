@@ -1,8 +1,8 @@
 package com.idear.devices.dispenser.command;
 
 import com.idear.devices.dispenser.DispenserException;
+import com.idear.devices.dispenser.DispenserStatus;
 import com.idear.devices.dispenser.comm.SerialPortHandler;
-import com.idear.devices.dispenser.command.AdvanceCheckStatusCommand.DispenserStatus;
 
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
@@ -15,6 +15,7 @@ public class ResetCommand extends AdvanceCommand{
                         AdvanceCheckStatusCommand advanceCheckStatusCommand) {
         super(serialPortHandler);
         this.advanceCheckStatusCommand = advanceCheckStatusCommand;
+        commandName = "Reset";
     }
 
     /**
@@ -24,11 +25,15 @@ public class ResetCommand extends AdvanceCommand{
     public void exec() throws DispenserException {
         wrapAndExecCommand(RESET_MACHINE);
 
-        DispenserStatus dispenserStatus;
-
+        DispenserStatus dispenserStatus = new DispenserStatus();
+        dispenserStatus.setDispenseError(true);
         //Send the advance status command until dispenser error disappears
         do {
-            dispenserStatus = advanceCheckStatusCommand.exec();
+            try {
+                dispenserStatus = advanceCheckStatusCommand.exec();
+            } catch (ErrorParsingDispenserStatus e) {
+                System.out.println("Error parsing error: " + e.getMessage());
+            }
         }while (!dispenserStatus.isDispenseError());
     }
 }

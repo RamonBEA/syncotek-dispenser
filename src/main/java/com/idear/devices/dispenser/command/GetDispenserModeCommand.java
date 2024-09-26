@@ -13,6 +13,7 @@ public class GetDispenserModeCommand extends AdvanceCommand{
     private final byte[] GET_DISPENSER_MODE = {0x53, 0x49};
     public GetDispenserModeCommand(SerialPortHandler serialPortHandler) {
         super(serialPortHandler);
+        commandName = "Get Dispenser Mode";
     }
 
     /**

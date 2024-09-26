@@ -10,17 +10,18 @@ import static com.idear.devices.dispenser.comm.SerialPortHandlerException.Serial
  * @author rperez
  * @version 1.0
  */
-public class JSerialCommSerialPortHandler implements SerialPortHandler{
+public class JSerialCommSerialPortHandler implements SerialPortHandler {
 
     private SerialPort serialPort;
 
     /**
-     *  Starts a connexion with a serial port
+     * Starts a connexion with a serial port
+     *
      * @param portName Port name for instance "/dev/ttyS0"
      * @param baudRate Communication velocity
      * @param dataBits Number of bits transmitted
      * @param stopBits Stop bits
-     * @param parity Parity
+     * @param parity   Parity
      * @throws SerialPortHandlerException It is thrown if the connexion was not successful
      */
     public JSerialCommSerialPortHandler(String portName, int baudRate, int dataBits,
@@ -30,19 +31,20 @@ public class JSerialCommSerialPortHandler implements SerialPortHandler{
         serialPort.setComPortParameters(baudRate, dataBits, stopBits, parity);
         serialPort.setFlowControl(SerialPort.FLOW_CONTROL_DISABLED);
 
-        if(!serialPort.openPort()){
+        if (!serialPort.openPort()) {
             throw new SerialPortHandlerException(ERROR_TRYING_START_SERIAL_PORT);
         }
     }
 
     /**
      * Send data to serial port without waiting response
-     * @param data Data to be to send
+     *
+     * @param data    Data to be to send
      * @param timeOut Time to wait to send
      * @throws SerialPortHandlerException It is thrown if is interrupted
      */
     @Override
-    public void sendData(byte[] data, long timeOut) throws SerialPortHandlerException{
+    public void sendData(byte[] data, long timeOut) throws SerialPortHandlerException {
         serialPort.writeBytes(data, data.length);
         try {
             TimeUnit.MILLISECONDS.sleep(timeOut);
@@ -52,9 +54,9 @@ public class JSerialCommSerialPortHandler implements SerialPortHandler{
     }
 
     /**
-     *
      * Send data to serial port and return a response
-     * @param data Data to be to send
+     *
+     * @param data    Data to be to send
      * @param timeOut Time to wait to send
      * @return Response
      * @throws SerialPortHandlerException It is thrown if is interrupted or does not receive a response
@@ -62,25 +64,29 @@ public class JSerialCommSerialPortHandler implements SerialPortHandler{
     @Override
     public byte[] sendAndReceiveData(byte[] data, long timeOut) throws SerialPortHandlerException {
         serialPort.writeBytes(data, data.length);
+        byte[] buffer = new byte[3];
         try {
             TimeUnit.MILLISECONDS.sleep(timeOut);
             int size = serialPort.bytesAvailable();
+
+            if (size < 0)
+                throw new SerialPortHandlerException(ERROR_TRYING_SEND_DATA);
+
             if (size > 0) {
-                byte[] buffer = new byte[size];
+                buffer = new byte[size];
                 serialPort.readBytes(buffer, buffer.length);
-                return buffer;
             }
         } catch (InterruptedException e) {
             throw new SerialPortHandlerException(ERROR_TRYING_SEND_DATA);
         }
-        throw new SerialPortHandlerException(ERROR_WAITING_FOR_DATA_RESPONSE);
+        return buffer;
     }
 
     /**
      * Close the serial port communication
      */
     @Override
-    public void close(){
+    public void close() {
         serialPort.closePort();
     }
 }

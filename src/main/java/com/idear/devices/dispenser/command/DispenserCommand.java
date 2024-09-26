@@ -23,6 +23,8 @@ public abstract class DispenserCommand {
     //Dispenser default address
     protected final byte[] DEFAULT_ADDRESS = {0x31, 0x35};
 
+    protected String commandName;
+
 
     public DispenserCommand(SerialPortHandler serialPortHandler) {
         this.serialPortHandler = serialPortHandler;

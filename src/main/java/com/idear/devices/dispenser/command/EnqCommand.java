@@ -15,6 +15,7 @@ public class EnqCommand extends DispenserCommand {
 
     public EnqCommand(SerialPortHandler serialPortHandler) {
         super(serialPortHandler);
+        commandName = "ENQ";
     }
 
     /**

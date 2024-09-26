@@ -1,8 +1,8 @@
 package com.idear.devices.dispenser.command;
 
 import com.idear.devices.dispenser.DispenserException;
+import com.idear.devices.dispenser.DispenserStatus;
 import com.idear.devices.dispenser.comm.SerialPortHandler;
-import com.idear.devices.dispenser.command.AdvanceCheckStatusCommand.DispenserStatus;
 
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
@@ -17,6 +17,7 @@ public class MoveCardCommand extends AdvanceCommand {
                            AdvanceCheckStatusCommand advanceCheckStatusCommand) {
         super(serialPortHandler);
         this.advanceCheckStatusCommand = advanceCheckStatusCommand;
+        commandName = "Move Card";
     }
 
     /**
@@ -34,7 +35,11 @@ public class MoveCardCommand extends AdvanceCommand {
         // until we detect that the related sensors are actives or no
         boolean stop =true;
         do {
-            dispenserStatus = advanceCheckStatusCommand.exec();
+            try {
+                dispenserStatus = advanceCheckStatusCommand.exec();
+            } catch (ErrorParsingDispenserStatus e) {
+                continue;
+            }
 
             switch (position) {
                 case FRONT_HOLDING_CARD:

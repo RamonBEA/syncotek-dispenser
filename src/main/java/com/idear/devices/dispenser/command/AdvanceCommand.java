@@ -3,6 +3,8 @@ package com.idear.devices.dispenser.command;
 import com.idear.devices.dispenser.DispenserException;
 import com.idear.devices.dispenser.comm.SerialPortHandler;
 import com.idear.devices.dispenser.comm.SerialPortHandlerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
@@ -13,6 +15,9 @@ import static com.idear.devices.dispenser.DispenserException.DispenserError.*;
  * Advance Command is a command that needs a determinate structure and needs an Enq Command confirmation
  */
 public abstract class AdvanceCommand extends DispenserCommand {
+
+    Logger logger = LoggerFactory.getLogger(AdvanceCommand.class);
+
     private EnqCommand enqCommand;
 
     public AdvanceCommand(SerialPortHandler serialPortHandler) {
@@ -48,17 +53,21 @@ public abstract class AdvanceCommand extends DispenserCommand {
             wrapData[wrapData.length - 2] = ETX;
             wrapData[wrapData.length - 1] =
                     calculateCheckSum(Arrays.copyOf(wrapData, wrapData.length - 1));
+//            logger.debug("Syncotek Dispenser - Executing command:{} with data:{}",
+//                    commandName, byteArrayToHexadecimal(wrapData));
 
             byte[] response = serialPortHandler.sendAndReceiveData(wrapData, WAIT_TIME);
 
-            if (response[0] != ACK)
+            if (response[0] == NAK)
                 throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
 
             //Confirm the execution, the dispenser do some action or return information
+//            logger.debug("Syncotek Dispenser - Executing command: ENQ");
             response = enqCommand.exec();
             return response;
 
         } catch (SerialPortHandlerException e) {
+            logger.error(e.getMessage(), e);
             throw new DispenserException(DISPENSER_COMMUNICATION_ERROR, e);
         }
     }
@@ -74,5 +83,12 @@ public abstract class AdvanceCommand extends DispenserCommand {
             crcVal ^= data;
         }
         return crcVal;
+    }
+
+    public static String byteArrayToHexadecimal(byte[] data) {
+        StringBuilder sb = new StringBuilder(data.length * 2);
+        for (byte b : data)
+            sb.append(String.format("%02x", b).toUpperCase());
+        return sb.toString();
     }
 }
