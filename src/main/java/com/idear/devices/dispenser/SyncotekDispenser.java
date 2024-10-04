@@ -83,14 +83,29 @@ public class SyncotekDispenser {
     }
 
     public DispenserMode getDispenserMode() throws DispenserException {
-        return getDispenserModeCommand.exec();
+        try {
+            reentrantLock.lock();
+            return getDispenserModeCommand.exec();
+        } finally {
+            reentrantLock.unlock();
+        }
     }
 
     public void setSetDispenserMode(DispenserMode mode) throws DispenserException {
-        setDispenserModeCommand.exec(mode);
+        try {
+            reentrantLock.lock();
+            setDispenserModeCommand.exec(mode);
+        } finally {
+            reentrantLock.unlock();
+        }
     }
 
     public void reset() throws DispenserException {
-        resetCommand.exec();
+        try {
+            reentrantLock.lock();
+            resetCommand.exec();
+        }finally {
+            reentrantLock.unlock();
+        }
     }
 }
