@@ -21,13 +21,20 @@ public class CommandExecutor {
 
         try {
             byte[] request = command.buildCommand();
-            logger.debug("Executing command: {}, data: {}", command.name, request);
+            logger.debug("Executing command: {}, data: {}", command.name, byteArrayToHexadecimal(request));
             byte[] response = serialPortHandler.sendAndReceiveData(
                     request, 100);
-            logger.debug("Response: {}", response);
+            logger.debug("Response: {}", byteArrayToHexadecimal(response));
             return response;
         } catch (SerialPortHandlerException e) {
             throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
         }
+    }
+
+    public static String byteArrayToHexadecimal(byte[] data) {
+        StringBuilder sb = new StringBuilder(data.length * 2);
+        for (byte b : data)
+            sb.append(String.format("%02x", b).toUpperCase());
+        return sb.toString();
     }
 }

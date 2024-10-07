@@ -10,7 +10,7 @@ public class EnqCommand extends Command {
 
     public EnqCommand() {
         data = new byte[] {0x05};
-        name = "ENQ Command";
+        name = "ENQ";
     }
 
     @Override
