@@ -20,10 +20,12 @@ public class CommandExecutor {
     public byte[] execute(Command command) throws DispenserException {
 
         try {
-            byte[] data = command.buildCommand();
-            logger.debug("Executing command: {}, data: {}", command.name, data);
-            return serialPortHandler.sendAndReceiveData(
-                    data, 100);
+            byte[] request = command.buildCommand();
+            logger.debug("Executing command: {}, data: {}", command.name, request);
+            byte[] response = serialPortHandler.sendAndReceiveData(
+                    request, 100);
+            logger.debug("Response: {}", response);
+            return response;
         } catch (SerialPortHandlerException e) {
             throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
         }
