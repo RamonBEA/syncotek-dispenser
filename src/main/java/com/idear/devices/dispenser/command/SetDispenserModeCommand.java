@@ -1,28 +1,14 @@
 package com.idear.devices.dispenser.command;
 
-import com.idear.devices.dispenser.DispenserException;
-import com.idear.devices.dispenser.comm.SerialPortHandler;
-
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
  * Configure the dispenser mode, there are three diferent modes: DISABLE, CAPTURE_CARD, READ_WRITE_CARD
  */
-public class SetDispenserModeCommand extends AdvanceCommand{
+public class SetDispenserModeCommand extends WrappedCommand{
 
-    private final byte[] DISPENSER_MODE = {0x49, 0x4E};
-    public SetDispenserModeCommand(SerialPortHandler serialPortHandler) {
-        super(serialPortHandler);
-        commandName = "Set Dispenser Mode";
-    }
-
-    /**
-     * Set the dispenser mode chosen
-     * @param dispenserMode Dispenser mode to set
-     * @throws DispenserException If the communication fails
-     */
-    public void exec(DispenserMode dispenserMode) throws DispenserException {
-        byte[] command = new byte[]{DISPENSER_MODE[0], DISPENSER_MODE[1], dispenserMode.value};
-        wrapAndExecCommand(command);
+    public SetDispenserModeCommand(DispenserMode dispenserMode) {
+        data = new byte[]{0x49, 0x4E, dispenserMode.value};
+        name = "Set Dispenser Mode";
     }
 
     /**
@@ -44,7 +30,7 @@ public class SetDispenserModeCommand extends AdvanceCommand{
             this.value = value;
         }
 
-        public static DispenserMode getDispenserMode(byte valueToSearch){
+        public static DispenserMode find(byte valueToSearch){
             for (DispenserMode dispenserMode: DispenserMode.values()) {
                 if(dispenserMode.value == valueToSearch)
                     return dispenserMode;

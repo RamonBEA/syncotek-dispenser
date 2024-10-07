@@ -9,7 +9,10 @@ import com.idear.devices.dispenser.command.SetDispenserModeCommand.DispenserMode
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.idear.devices.dispenser.DispenserException.DispenserError.DISPENSER_COMMUNICATION_ERROR;
 
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
@@ -22,14 +25,11 @@ import java.util.concurrent.locks.ReentrantLock;
  **/
 public class SyncotekDispenser {
 
-    private MoveCardCommand moveCardCommand;
-    private CaptureCardCommand captureCardCommand;
-    private AdvanceCheckStatusCommand advanceCheckStatusCommand;
-    private GetDispenserModeCommand getDispenserModeCommand;
-    private SetDispenserModeCommand setDispenserModeCommand;
-    private ResetCommand resetCommand;
-    private ReentrantLock reentrantLock = new ReentrantLock();
     private Logger logger = LoggerFactory.getLogger(SyncotekDispenser.class);
+    private CommandExecutor commandExecutor;
+    protected final byte ACK = 0x06;
+    protected final byte NAK = 0x15;
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * When we need to start the device, just we will need specify the port name,
@@ -42,13 +42,8 @@ public class SyncotekDispenser {
         try {
             SerialPortHandler serialPortHandler =
                     new JSerialCommSerialPortHandler(port, 9600, 8, 1, 0);
-
-            advanceCheckStatusCommand = new AdvanceCheckStatusCommand(serialPortHandler);
-            moveCardCommand = new MoveCardCommand(serialPortHandler, advanceCheckStatusCommand);
-            captureCardCommand = new CaptureCardCommand(serialPortHandler, advanceCheckStatusCommand);
-            resetCommand = new ResetCommand(serialPortHandler, advanceCheckStatusCommand);
-            getDispenserModeCommand = new GetDispenserModeCommand(serialPortHandler);
-            setDispenserModeCommand = new SetDispenserModeCommand(serialPortHandler);
+            commandExecutor = new CommandExecutor(serialPortHandler);
+            logger.info("Starting dispenser on {} port successfully", port);
 
         } catch (SerialPortHandlerException e) {
             throw new DispenserException(DispenserException.DispenserError.DISPENSER_INITIAL_CONNECTION_ERROR, e);
@@ -57,55 +52,93 @@ public class SyncotekDispenser {
 
     public void moveCard(Position position) throws DispenserException {
         try {
-            reentrantLock.lock();
-            moveCardCommand.exec(position);
+            lock.lock();
+            MoveCardCommand moveCardCommand = new MoveCardCommand(position);
+            execCommandWithEnq(moveCardCommand);
+            logger.info("Moving card to position {}", position);
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         } finally {
-            reentrantLock.unlock();
+            lock.unlock();
         }
     }
+
+    private byte[] execCommandWithEnq(WrappedCommand command) throws DispenserException {
+        byte[] response = commandExecutor.execute(command);
+
+        if (response[0] == NAK)
+            throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
+
+        EnqCommand enqCommand = new EnqCommand();
+        return commandExecutor.execute(enqCommand);
+    }
+
 
     public void captureCard() throws DispenserException {
         try {
-            reentrantLock.lock();
-            captureCardCommand.exec();
+            lock.lock();
+            CaptureCardCommand captureCardCommand = new CaptureCardCommand();
+            execCommandWithEnq(captureCardCommand);
+            logger.info("Capturing card");
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         } finally {
-            reentrantLock.unlock();
+            lock.unlock();
         }
     }
 
-    public DispenserStatus getStatus() throws DispenserException, ErrorParsingDispenserStatus {
+    public void setDispenserMode(DispenserMode mode) throws DispenserException {
         try {
-            reentrantLock.lock();
-            return advanceCheckStatusCommand.exec();
+            lock.lock();
+            SetDispenserModeCommand setDispenserModeCommand = new SetDispenserModeCommand(mode);
+            execCommandWithEnq(setDispenserModeCommand);
+            logger.info("Setting dispenser to mode {}", mode);
         } finally {
-            reentrantLock.unlock();
+            lock.unlock();
         }
     }
 
     public DispenserMode getDispenserMode() throws DispenserException {
         try {
-            reentrantLock.lock();
-            return getDispenserModeCommand.exec();
+            lock.lock();
+            GetDispenserModeCommand getDispenserModeCommand = new GetDispenserModeCommand();
+            byte[] response = execCommandWithEnq(getDispenserModeCommand);
+            DispenserMode mode  = DispenserMode.find(response[5]);
+            logger.info("Getting dispenser mode {}", mode);
+            return mode;
         } finally {
-            reentrantLock.unlock();
-        }
-    }
-
-    public void setSetDispenserMode(DispenserMode mode) throws DispenserException {
-        try {
-            reentrantLock.lock();
-            setDispenserModeCommand.exec(mode);
-        } finally {
-            reentrantLock.unlock();
+            lock.unlock();
         }
     }
 
     public void reset() throws DispenserException {
         try {
-            reentrantLock.lock();
-            resetCommand.exec();
+            lock.lock();
+            ResetCommand resetCommand = new ResetCommand();
+            execCommandWithEnq(resetCommand);
+            logger.info("Resetting dispenser");
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public DispenserStatus getStatus() throws DispenserException, ErrorParsingDispenserStatus {
+        try {
+            lock.lock();
+            AdvanceCheckStatusCommand advanceCheckStatusCommand = new AdvanceCheckStatusCommand();
+            byte[] response = execCommandWithEnq(advanceCheckStatusCommand);
+            DispenserStatus dispenserStatus = DispenserStatusParser.parse(response);
+            logger.info("Getting dispenser status");
+            logger.info(dispenserStatus.toString());
+            return dispenserStatus;
         }finally {
-            reentrantLock.unlock();
+            lock.unlock();
         }
     }
 }

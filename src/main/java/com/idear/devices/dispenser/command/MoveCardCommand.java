@@ -1,64 +1,14 @@
 package com.idear.devices.dispenser.command;
 
-import com.idear.devices.dispenser.DispenserException;
-import com.idear.devices.dispenser.DispenserStatus;
-import com.idear.devices.dispenser.comm.SerialPortHandler;
-
 /**
  * @author rperez (ramon.perez@sistemabea.mx)
  * Command to move a card of three diferent ways
  */
-public class MoveCardCommand extends AdvanceCommand {
+public class MoveCardCommand extends WrappedCommand {
 
-    private final byte[] MOVE_CARD = {0x46, 0x43};
-    private AdvanceCheckStatusCommand advanceCheckStatusCommand;
-
-    public MoveCardCommand(SerialPortHandler serialPortHandler,
-                           AdvanceCheckStatusCommand advanceCheckStatusCommand) {
-        super(serialPortHandler);
-        this.advanceCheckStatusCommand = advanceCheckStatusCommand;
-        commandName = "Move Card";
-    }
-
-    /**
-     * Move the card to the specified position
-     *
-     * @param position Position where the card will be moved
-     * @throws DispenserException If the serial connexion fails
-     */
-    public void exec(Position position) throws DispenserException {
-        byte[] command = new byte[]{MOVE_CARD[0], MOVE_CARD[1], position.value};
-        wrapAndExecCommand(command);
-        DispenserStatus dispenserStatus;
-
-        //We should send the advance command status
-        // until we detect that the related sensors are actives or no
-        boolean stop =true;
-        do {
-            try {
-                dispenserStatus = advanceCheckStatusCommand.exec();
-            } catch (ErrorParsingDispenserStatus e) {
-                continue;
-            }
-
-            switch (position) {
-                case FRONT_HOLDING_CARD:
-                    stop = dispenserStatus.isSensorOneActive() &&
-                            dispenserStatus.isSensorTwoActive() &&
-                            !dispenserStatus.isSensorThreeActive();
-                    break;
-                case FRONT_WITHOUT_HOLDING_CARD:
-                    stop = !dispenserStatus.isSensorOneActive() &&
-                            !dispenserStatus.isSensorTwoActive() &&
-                            !dispenserStatus.isSensorThreeActive();
-                    break;
-                case READ_WRITE_SCAN:
-                    stop = !dispenserStatus.isSensorOneActive() &&
-                            dispenserStatus.isSensorTwoActive() &&
-                            dispenserStatus.isSensorThreeActive();
-                    break;
-            }
-        } while (!stop);
+    public MoveCardCommand(Position position) {
+        data = new byte[]{0x46, 0x43, position.value};
+        name = "Move Card";
     }
 
     /**

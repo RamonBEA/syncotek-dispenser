@@ -1,4 +1,4 @@
-package com.idear.devices.dispenser;
+package com.idear.devices.dispenser.command;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -120,7 +120,6 @@ public class DispenserStatus {
         try {
             return mapper.writeValueAsString(this);
         } catch ( JsonProcessingException ignore) {
-            // TODO log
             return null;
         }
     }

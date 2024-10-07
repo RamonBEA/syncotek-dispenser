@@ -1,11 +1,6 @@
-package com.idear.devices.dispenser;
-
-import com.idear.devices.dispenser.command.ErrorParsingDispenserStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.idear.devices.dispenser.command;
 
 public class DispenserStatusParser {
-    private static Logger logger = LoggerFactory.getLogger(DispenserStatusParser.class);
     private DispenserStatusParser() {}
 
     public static DispenserStatus parse(byte[] status) throws ErrorParsingDispenserStatus {
@@ -28,7 +23,6 @@ public class DispenserStatusParser {
         dispenserStatus.setSensorThreeActive((status[8] & 0x04) == 0x04);
         dispenserStatus.setSensorTwoActive((status[8] & 0x02) == 0x02);
         dispenserStatus.setSensorOneActive((status[8] & 0x01) == 0x01);
-//        logger.info(dispenserStatus.toString());
         return dispenserStatus;
     }
 }
