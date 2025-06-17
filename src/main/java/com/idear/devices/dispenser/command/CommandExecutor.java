@@ -10,8 +10,8 @@ import static com.idear.devices.dispenser.DispenserException.DispenserError.DISP
 
 public class CommandExecutor {
 
-    private Logger logger = LoggerFactory.getLogger(CommandExecutor.class);
-    private SerialPortHandler serialPortHandler;
+    private final Logger logger = LoggerFactory.getLogger(CommandExecutor.class);
+    private final SerialPortHandler serialPortHandler;
 
     public CommandExecutor(SerialPortHandler serialPortHandler) {
         this.serialPortHandler = serialPortHandler;
