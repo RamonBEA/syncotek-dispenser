@@ -31,6 +31,17 @@ public class CommandExecutor {
         }
     }
 
+    public void executeResponseLess(Command command) throws DispenserException {
+
+        try {
+            byte[] request = command.buildCommand();
+            logger.debug("Executing command: {}, data: {}", command.name, byteArrayToHexadecimal(request));
+            serialPortHandler.sendData(
+                    request, 100);
+        } catch (SerialPortHandlerException e) {
+            throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
+        }
+    }
     public static String byteArrayToHexadecimal(byte[] data) {
         StringBuilder sb = new StringBuilder(data.length * 2);
         for (byte b : data)

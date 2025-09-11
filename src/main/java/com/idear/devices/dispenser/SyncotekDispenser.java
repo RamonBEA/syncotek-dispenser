@@ -54,7 +54,7 @@ public class SyncotekDispenser {
         try {
             lock.lock();
             MoveCardCommand moveCardCommand = new MoveCardCommand(position);
-            execCommandWithEnq(moveCardCommand);
+            execCommandWithEnqResponseLess(moveCardCommand);
             logger.info("Moving card to position {}", position);
             try {
                 TimeUnit.SECONDS.sleep(1);
@@ -76,12 +76,22 @@ public class SyncotekDispenser {
         return commandExecutor.execute(enqCommand);
     }
 
+    private void execCommandWithEnqResponseLess(WrappedCommand command) throws DispenserException {
+        byte[] response = commandExecutor.execute(command);
+
+        if (response[0] == NAK)
+            throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
+
+        EnqCommand enqCommand = new EnqCommand();
+       commandExecutor.executeResponseLess(enqCommand);
+    }
+
 
     public void captureCard() throws DispenserException {
         try {
             lock.lock();
             CaptureCardCommand captureCardCommand = new CaptureCardCommand();
-            execCommandWithEnq(captureCardCommand);
+            execCommandWithEnqResponseLess(captureCardCommand);
             logger.info("Capturing card");
             try {
                 TimeUnit.SECONDS.sleep(1);
@@ -97,7 +107,7 @@ public class SyncotekDispenser {
         try {
             lock.lock();
             SetDispenserModeCommand setDispenserModeCommand = new SetDispenserModeCommand(mode);
-            execCommandWithEnq(setDispenserModeCommand);
+            execCommandWithEnqResponseLess(setDispenserModeCommand);
             logger.info("Setting dispenser to mode {}", mode);
         } finally {
             lock.unlock();
@@ -121,7 +131,7 @@ public class SyncotekDispenser {
         try {
             lock.lock();
             ResetCommand resetCommand = new ResetCommand();
-            execCommandWithEnq(resetCommand);
+            execCommandWithEnqResponseLess(resetCommand);
             logger.info("Resetting dispenser");
         } finally {
             lock.unlock();
@@ -133,10 +143,9 @@ public class SyncotekDispenser {
             lock.lock();
             AdvanceCheckStatusCommand advanceCheckStatusCommand = new AdvanceCheckStatusCommand();
             byte[] response = execCommandWithEnq(advanceCheckStatusCommand);
-            DispenserStatus dispenserStatus = DispenserStatusParser.parse(response);
-            logger.info("Getting dispenser status");
-            logger.info(dispenserStatus.toString());
-            return dispenserStatus;
+            //            logger.info("Getting dispenser status");
+//            logger.info(dispenserStatus.toString());
+            return DispenserStatusParser.parse(response);
         }finally {
             lock.unlock();
         }

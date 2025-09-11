@@ -69,13 +69,11 @@ public class JSerialCommSerialPortHandler implements SerialPortHandler {
             TimeUnit.MILLISECONDS.sleep(timeOut);
             int size = serialPort.bytesAvailable();
 
-            if (size < 0)
+            if (size <= 0)
                 throw new SerialPortHandlerException(ERROR_TRYING_SEND_DATA);
 
-            if (size > 0) {
-                buffer = new byte[size];
-                serialPort.readBytes(buffer, buffer.length);
-            }
+            buffer = new byte[size];
+            serialPort.readBytes(buffer, buffer.length);
         } catch (InterruptedException e) {
             throw new SerialPortHandlerException(ERROR_TRYING_SEND_DATA);
         }
