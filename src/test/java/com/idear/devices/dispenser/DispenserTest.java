@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 
-class DispenserTest {
+class DispenserTest implements DispenserStatusObserver{
 
     private final Logger logger = LoggerFactory.getLogger(DispenserTest.class);
 
@@ -129,40 +129,18 @@ class DispenserTest {
     void statusTask() {
         try {
             SyncotekDispenser dispenser = new SyncotekDispenser("COM11");
-            StatusTask statusTask = new StatusTask(dispenser, 500);
+            StatusTask statusTask = new StatusTask(dispenser, 500, this);
             statusTask.start();
             TimeUnit.SECONDS.sleep(5);
             statusTask.setActivate(true);
-
-            Thread getStatusTask1 = new Thread(() -> {
-                while (true) {
-                    try {
-                        DispenserStatus status = statusTask.getDispenserStatus();
-                        logger.info("Status: {}", status);
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
-            }, "Get Status Task 1");
-            getStatusTask1.start();
-
-            Thread getStatusTask2 = new Thread(() -> {
-                while (true) {
-                    try {
-                        DispenserStatus status = statusTask.getDispenserStatus();
-                        logger.info("Status: {}", status);
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }
-            }, "Get Status Task 2");
-            getStatusTask2.start();
-
             TimeUnit.DAYS.sleep(1);
         } catch (DispenserException | InterruptedException e) {
             logger.error(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void onDispenserStatusChanged(DispenserStatus status) {
+        logger.info("Status: {}", status);
     }
 }

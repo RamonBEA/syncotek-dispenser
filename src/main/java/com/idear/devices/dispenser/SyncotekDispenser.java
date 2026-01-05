@@ -27,6 +27,7 @@ public class SyncotekDispenser {
 
     private Logger logger = LoggerFactory.getLogger(SyncotekDispenser.class);
     private CommandExecutor commandExecutor;
+    private SerialPortHandler serialPortHandler;
     protected final byte ACK = 0x06;
     protected final byte NAK = 0x15;
     private final ReentrantLock lock = new ReentrantLock();
@@ -40,7 +41,7 @@ public class SyncotekDispenser {
      */
     public SyncotekDispenser(String port) throws DispenserException {
         try {
-            SerialPortHandler serialPortHandler =
+            serialPortHandler =
                     new JSerialCommSerialPortHandler(port, 9600, 8, 1, 0);
             commandExecutor = new CommandExecutor(serialPortHandler);
             logger.info("Starting dispenser on {} port successfully", port);
@@ -83,7 +84,7 @@ public class SyncotekDispenser {
             throw new DispenserException(DISPENSER_COMMUNICATION_ERROR);
 
         EnqCommand enqCommand = new EnqCommand();
-       commandExecutor.executeResponseLess(enqCommand);
+        commandExecutor.executeResponseLess(enqCommand);
     }
 
 
@@ -119,7 +120,7 @@ public class SyncotekDispenser {
             lock.lock();
             GetDispenserModeCommand getDispenserModeCommand = new GetDispenserModeCommand();
             byte[] response = execCommandWithEnq(getDispenserModeCommand);
-            DispenserMode mode  = DispenserMode.find(response[5]);
+            DispenserMode mode = DispenserMode.find(response[5]);
             logger.info("Getting dispenser mode {}", mode);
             return mode;
         } finally {
@@ -143,11 +144,17 @@ public class SyncotekDispenser {
             lock.lock();
             AdvanceCheckStatusCommand advanceCheckStatusCommand = new AdvanceCheckStatusCommand();
             byte[] response = execCommandWithEnq(advanceCheckStatusCommand);
-            //            logger.info("Getting dispenser status");
-//            logger.info(dispenserStatus.toString());
-            return DispenserStatusParser.parse(response);
-        }finally {
+            logger.debug("Getting dispenser status");
+            DispenserStatus dispenserStatus = DispenserStatusParser.parse(response);
+            logger.debug(dispenserStatus.toString());
+            return dispenserStatus;
+        } finally {
             lock.unlock();
         }
+    }
+
+    public void disconnect() {
+        if(serialPortHandler != null)
+            serialPortHandler.close();
     }
 }

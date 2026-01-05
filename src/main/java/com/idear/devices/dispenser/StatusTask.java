@@ -1,47 +1,47 @@
 package com.idear.devices.dispenser;
 
-import com.idear.devices.dispenser.command.DispenserStatus;
 import com.idear.devices.dispenser.command.ErrorParsingDispenserStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class StatusTask extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(StatusTask.class);
     private final SyncotekDispenser syncotekDispenser;
-    private final AtomicReference<DispenserStatus> dispenserStatus;
+    private final AtomicBoolean terminate;
     private final AtomicBoolean activate;
     private final int intervalToStatusRequest;
+    private final DispenserStatusObserver dispenserStatusObserver;
 
-    public StatusTask(SyncotekDispenser syncotekDispenser, int intervalToStatusRequest) {
+    public StatusTask(SyncotekDispenser syncotekDispenser, int intervalToStatusRequest, DispenserStatusObserver dispenserStatusObserver) {
         this.syncotekDispenser = syncotekDispenser;
         this.setName("StatusTask");
-        dispenserStatus = new AtomicReference<>();
+        this.terminate = new AtomicBoolean(true);
         this.activate = new AtomicBoolean(false);
         this.intervalToStatusRequest = intervalToStatusRequest;
-    }
-
-    public DispenserStatus getDispenserStatus() {
-        return dispenserStatus.get();
+        this.dispenserStatusObserver = dispenserStatusObserver;
     }
 
     @Override
     public void run() {
         logger.info("Dispenser StatusTask started, interval to {} ms", intervalToStatusRequest);
-        while (true) {
+        while (terminate.get()) {
             while (activate.get()) {
                 try {
-                    dispenserStatus.set(syncotekDispenser.getStatus());
+                    dispenserStatusObserver.onDispenserStatusChanged(syncotekDispenser.getStatus());
                     TimeUnit.MILLISECONDS.sleep(intervalToStatusRequest);
                 } catch (DispenserException | ErrorParsingDispenserStatus | InterruptedException e) {
                     logger.error("Error getting dispenser status [{}]", e.getMessage());
                 }
             }
         }
+    }
+
+    public synchronized void terminate() {
+        terminate.set(false);
     }
 
     public synchronized boolean isActivate() {
