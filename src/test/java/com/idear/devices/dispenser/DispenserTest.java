@@ -143,4 +143,9 @@ class DispenserTest implements DispenserStatusObserver{
     public void onDispenserStatusChanged(DispenserStatus status) {
         logger.info("Status: {}", status);
     }
+
+    @Override
+    public void onDispenserError(Exception e) {
+        logger.error(e.getMessage(), e);
+    }
 }

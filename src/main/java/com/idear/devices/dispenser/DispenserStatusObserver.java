@@ -4,4 +4,5 @@ import com.idear.devices.dispenser.command.DispenserStatus;
 
 public interface DispenserStatusObserver {
     void onDispenserStatusChanged(DispenserStatus status);
+    void onDispenserError(Exception e);
 }

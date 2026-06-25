@@ -17,12 +17,20 @@ public class StatusTask extends Thread {
     private final DispenserStatusObserver dispenserStatusObserver;
 
     public StatusTask(SyncotekDispenser syncotekDispenser, int intervalToStatusRequest, DispenserStatusObserver dispenserStatusObserver) {
+        if(syncotekDispenser == null) {
+            throw new IllegalArgumentException("SyncotekDispenser cannot be null");
+        }
+
+        if(dispenserStatusObserver == null) {
+            throw new IllegalArgumentException("DispenserStatusObserver cannot be null");
+        }
+
         this.syncotekDispenser = syncotekDispenser;
+        this.dispenserStatusObserver = dispenserStatusObserver;
         this.setName("StatusTask");
         this.terminate = new AtomicBoolean(true);
         this.activate = new AtomicBoolean(false);
         this.intervalToStatusRequest = intervalToStatusRequest;
-        this.dispenserStatusObserver = dispenserStatusObserver;
     }
 
     @Override
@@ -35,6 +43,7 @@ public class StatusTask extends Thread {
                     TimeUnit.MILLISECONDS.sleep(intervalToStatusRequest);
                 } catch (DispenserException | ErrorParsingDispenserStatus | InterruptedException e) {
                     logger.error("Error getting dispenser status [{}]", e.getMessage());
+                    dispenserStatusObserver.onDispenserError(e);
                 }
             }
         }
